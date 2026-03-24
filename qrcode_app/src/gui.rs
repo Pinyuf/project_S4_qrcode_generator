@@ -11,7 +11,7 @@ pub fn launch_gui(args: Args) -> Result<(), String> {
 
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(
-        "Générateur de QR code",
+        "QRust code",
         native_options,
         Box::new(move |cc| Box::new(QrGuiApp::new(cc, args.clone()))),
     )

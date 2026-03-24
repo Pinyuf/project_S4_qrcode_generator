@@ -1,0 +1,46 @@
+Ce document liste le rôle de chaque fonction définie dans `src/qr.rs` et `src/gui.rs`.
+
+src/qr.rs
+- `generate_qr(link, args)`: valide les paramètres, prépare les couleurs, construit un QR code via `ManualQrCode`, applique un éventuel fond personnalisé puis sauvegarde l'image finale sur disque.
+- `load_background(args, width, height)`: charge l'image de fond si un chemin est fourni et la redimensionne aux dimensions demandées.
+- `parse_hex_color(input)`: convertit une chaîne hexadécimale `rrggbb` en triplet RGB, avec validation basique.
+- `ManualQrCode::encode(data)`: assemble un QR code minimal en mode byte : choisit une version, construit le flux binaire (mode, longueur, données, padding), calcule la correction d'erreurs, dessine les motifs fonctionnels et applique le masquage.
+- `ManualQrCode::new(version)`: initialise la grille d'un QR code de la version donnée, avec ses buffers de modules et de positions réservées.
+- `ManualQrCode::size(&self)`: retourne la taille d'un côté de la matrice (en modules).
+- `ManualQrCode::get_module(x, y)`: récupère l'état (noir/blanc) d'un module, avec garde pour rester dans la grille.
+- `ManualQrCode::add_ecc_and_interleave(data)`: divise les données en blocs, calcule les codes Reed-Solomon pour chaque bloc, puis entrelace données et ECC selon la norme.
+- `ManualQrCode::draw_function_patterns(&mut self)`: trace les motifs fonctionnels fixes (séparateurs, motifs de positionnement, repères d'alignement), les bits de format et éventuellement ceux de version.
+- `ManualQrCode::draw_format_bits(&mut self)`: place les bits de format (niveau ECC, masque) sur les positions réservées autour des motifs de recherche.
+- `ManualQrCode::draw_version(&mut self)`: pour les versions >=7, inscrit les informations de version sur les zones prévues.
+- `ManualQrCode::draw_finder_pattern(x, y)`: dessine un motif de recherche 7x7 centré sur `(x, y)` avec son contour.
+- `ManualQrCode::draw_alignment_pattern(x, y)`: dessine un motif d'alignement 5x5 centré sur `(x, y)`.
+- `ManualQrCode::set_function_module(x, y, is_dark)`: écrit un module fonctionnel et marque sa position comme réservée.
+- `ManualQrCode::draw_codewords(&mut self, data)`: remplit la matrice avec les bits des codewords (données + ECC) en suivant la trajectoire en zigzag prescrite, en sautant les modules réservés.
+- `ManualQrCode::apply_mask(&mut self)`: applique le masque de motif (ici masque 0 : `(x + y) % 2 == 0`) sur les modules non fonctionnels.
+- `pick_version(data_len)`: choisit la plus petite version capable de contenir les données et le bourrage nécessaires.
+- `alignment_pattern_positions(version, size)`: calcule les coordonnées des motifs d'alignement pour la version cible.
+- `compute_format_bits()`: génère les 15 bits de format (niveau ECC moyen + masque 0) avec le polynôme BCH.
+- `compute_version_bits(version)`: calcule les 18 bits d'information de version (polynôme BCH) pour les versions 7 et plus.
+- `get_bit(data, i)`: lit le bit `i` d'un entier, utile pour parcourir les séquences de bits.
+- `num_raw_data_modules(ver)`: donne le nombre total de modules de données brutes pour une version donnée, hors zones de motifs.
+- `num_data_codewords(ver)`: calcule le nombre de codewords utilisables pour les données (après retrait ECC).
+- `ecc_codewords_per_block(ver)`: renvoie le nombre de codewords de correction par bloc pour le niveau ECC moyen.
+- `num_error_correction_blocks(ver)`: renvoie le nombre de blocs de correction pour la version donnée.
+- `reed_solomon_compute_divisor(degree)`: construit le polynôme générateur (diviseur) Reed-Solomon de degré souhaité.
+- `reed_solomon_compute_remainder(data, divisor)`: calcule les restes (codewords ECC) en divisant le message par le diviseur RS.
+- `reed_solomon_multiply(x, y)`: multiplie deux éléments du corps de Galois GF(256), opération de base des calculs RS.
+- `BitBuffer::new()`: crée un tampon dynamique de bits.
+- `BitBuffer::push_bit(bit)`: ajoute un bit au tampon.
+- `BitBuffer::push_bits(value, length)`: insère `length` bits de `value` en ordre big-endian.
+- `BitBuffer::len(&self)`: retourne le nombre de bits accumulés.
+- `BitBuffer::to_bytes(self)`: transforme la séquence de bits en tableau d'octets (avec padding sur le dernier octet si besoin).
+- `MEDIUM_ECC_CODEWORDS_PER_BLOCK` et `MEDIUM_BLOCK_COUNT`: tables de constantes fournissant respectivement le nombre de codewords de correction par bloc et le nombre de blocs pour chaque version en niveau ECC moyen.
+
+src/gui.rs
+- `launch_gui(args)`: vérifie la présence d'un serveur graphique, prépare les options eframe puis démarre l'application native.
+- `QrGuiApp::new(cc, args)`: configure le style egui et initialise l'état (valeurs des champs du formulaire, statut, texture du QR).
+- `QrGuiApp::update(&mut self, ctx, frame)`: implémentation principale de l'UI : dessine le panneau, les champs de saisie, le bouton de génération, affiche le statut et l'aperçu du QR.
+- `QrGuiApp::handle_generate(&mut self, ctx)`: construit les arguments à partir de l'UI, invoque `generate_qr`, met à jour les messages et charge la texture pour l'aperçu en cas de succès.
+- `load_texture_from_file(ctx, path)`: ouvre l'image générée, la convertit en `ColorImage` puis la charge comme texture egui pour l'affichage.
+- `configure_style(ctx)`: personnalise l'apparence d'egui (espacements, arrondis, palette claire).
+- `is_headless()`: détecte l'absence d'affichage (DISPLAY/WAYLAND_DISPLAY sous Linux) pour refuser le lancement en mode GUI dans un environnement sans serveur graphique.

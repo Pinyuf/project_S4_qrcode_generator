@@ -13,8 +13,8 @@ pub struct Args {
     ///Lien à encoder (sinon l'app demandera via stdin)
     link: Option<String>,
 
-    ///Fichier de sortie (png)
-    #[arg(short, long, default_value = "qrcode.png")]
+    ///Fichier de sortie (svg)
+    #[arg(short, long, default_value = "qrcode.svg")]
     output: String,
 
     ///Taille minimale (px) du QR code
@@ -54,7 +54,7 @@ fn main() {
     let link = args.link.clone().unwrap_or_else(prompt_for_link);
 
     match generate_qr(&link, &args) {
-        Ok(path) => println!("QR code enregistré dans: {}", path),
+        Ok(result) => println!("QR code enregistré dans: {}", result.path),
         Err(err) => {
             eprintln!("Impossible de générer le QR code: {err}");
             std::process::exit(1);

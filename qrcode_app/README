@@ -1,7 +1,8 @@
 Ce document liste le rôle de chaque fonction définie dans `src/qr.rs` et `src/gui.rs`.
 
 src/qr.rs
-- `generate_qr(link, args)`: valide les paramètres, prépare les couleurs, construit un QR code via `ManualQrCode`, applique un éventuel fond personnalisé puis sauvegarde l'image finale sur disque.
+- `generate_qr(link, args)`: valide les paramètres, prépare les couleurs, construit un QR code via `ManualQrCode`, applique un éventuel fond personnalisé puis sauvegarde le résultat en SVG sur disque en renvoyant également un aperçu raster.
+- `GeneratedQr`: résultat de `generate_qr` contenant le chemin du SVG généré et une image RGBA prête à être affichée dans l'interface.
 - `load_background(args, width, height)`: charge l'image de fond si un chemin est fourni et la redimensionne aux dimensions demandées.
 - `parse_hex_color(input)`: convertit une chaîne hexadécimale `rrggbb` en triplet RGB, avec validation basique.
 - `ManualQrCode::encode(data)`: assemble un QR code minimal en mode byte : choisit une version, construit le flux binaire (mode, longueur, données, padding), calcule la correction d'erreurs, dessine les motifs fonctionnels et applique le masquage.
